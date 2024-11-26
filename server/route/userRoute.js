@@ -1,6 +1,7 @@
 
 import { Router } from "express";
-import { loginUserController, registerUserController, verifyEmailController } from "../controllers/userController.js";
+import { loginUserController, logoutUserController, registerUserController, verifyEmailController } from "../controllers/userController.js";
+import auth from "../middlewares/auth.js";
 
 const userRouter = Router()
 
@@ -9,6 +10,7 @@ userRouter.post('/verify-email',verifyEmailController)
 
 
 userRouter.post('/login',loginUserController)
+userRouter.get('/logout',auth,logoutUserController)
 
 
 

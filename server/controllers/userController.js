@@ -188,3 +188,35 @@ export const loginUserController = async(req,res) =>{
     }
 
 }
+
+
+/* Logout user */
+
+export const logoutUserController = async(req,res) =>{
+  try {
+
+
+    const cookiesOption = {
+      httpOnly :true,
+      secure:true,
+      sameSite:"None"
+    }
+    res.clearCookie("accessToken",cookiesOption)
+    res.clearCookie("refreshToken",cookiesOption)
+
+
+
+    res.json({
+      message:"Logout SuccessFully",
+      error:false,
+      success:true
+    })
+    
+  } catch (error) {
+    res.status(500).json({
+      message:error.message || error ,
+      error:true,
+      success: false
+    })
+  }
+} 
