@@ -5,6 +5,8 @@ import verifyEmailTemplate from "../utils/verifiyEmailTemplate.js";
 import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
+import generateOtp from "../utils/generateOtp.js";
+import forgotPasswordTemplate from "../utils/forgotPasswordTemplate.js";
 
 /* Register User */
 
@@ -255,12 +257,15 @@ export const updateUserDetails = async (req, res) => {
       hashPassword = await bcryptjs.hash(password, salt);
     }
 
-    const updateUser = await UserModel.updateOne({_id:userId}, {
-      ...(name && { name: name }),
-      ...(email && { email: email }),
-      ...(mobile && { mobile: mobile }),
-      ...(password && { password: hashPassword }),
-    });
+    const updateUser = await UserModel.updateOne(
+      { _id: userId },
+      {
+        ...(name && { name: name }),
+        ...(email && { email: email }),
+        ...(mobile && { mobile: mobile }),
+        ...(password && { password: hashPassword }),
+      }
+    );
     return res.json({
       message: "Updated user successfully",
       error: false,
@@ -272,6 +277,49 @@ export const updateUserDetails = async (req, res) => {
       message: error.message || error,
       error: true,
       success: true,
+    });
+  }
+};
+
+/* Forgot password */
+
+export const forgotPasswordController = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "email id not available",
+        error: true,
+        success: false,
+      });
+    }
+    const otp = generateOtp();
+    const expireTime = new Date() + 60 * 60 * 1000; //1h
+
+    const update = await UserModel.findByIdAndDelete(user._id, {
+      forgot_password_otp: otp,
+      forgot_password_expiry: new Date(expireTime).toISOString(),
+    });
+    await sendEmail({
+      sendTo: email,
+      subject: "Forgot password from blinkIt",
+      html: forgotPasswordTemplate({name:user.name,otp:otp})
+    });
+
+    return res.json({
+      message: "check your email",
+      error: false,
+      success: true,
+    });
+
+
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
     });
   }
 };
