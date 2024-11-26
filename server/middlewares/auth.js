@@ -21,7 +21,7 @@ const auth =async(req,res,next) => {
                 success:true
             })
         }
-        req.userID = decode.id
+        req.userId = decode.id
 
         next()
     } catch (error) {
