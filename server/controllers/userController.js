@@ -7,6 +7,7 @@ import generateRefreshToken from "../utils/generateRefreshToken.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 import generateOtp from "../utils/generateOtp.js";
 import forgotPasswordTemplate from "../utils/forgotPasswordTemplate.js";
+import jwt from 'jsonwebtoken'
 
 /* Register User */
 
@@ -344,7 +345,7 @@ export const verifyForgotPasswordOtp = async (req, res) => {
       });
     }
 
-    const currentTime = new Date().toISOString()
+    const currentTime = new Date().toISOString();
     if (user.forgot_password_expiry < currentTime) {
       return res.status(400).json({
         message: "otp expired",
@@ -417,7 +418,62 @@ export const resetPassword = async (req, res) => {
       error: false,
       success: true,
     });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
 
+/* refresh token controller */
+
+export const refreshToken = async (req, res) => {
+  try {
+    const refreshToken =
+      req.cookies.refreshToken || req.header?.authorization?.split(" ")[1];
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Invalid Token",
+        error: true,
+        success: false,
+      });
+    }
+
+    const verifyToken = await jwt.verify(
+      refreshToken,
+      process.env.SECRET_KEY_REFRESH_TOKEN
+    );
+
+    if (!verifyToken) {
+      return res.status(401).json({
+        message: "Token is expired",
+        error: true,
+        success: false,
+      });
+    }
+    const userId = verifyToken?._id;
+
+    const newAccessToken = await generateAccessToken(userId);
+
+    const cookiesOption = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+
+    res.cookie("accessToken", newAccessToken, cookiesOption);
+
+    return res.json({
+      message:"New Access Token Generated",
+      error: false,
+      success:true,
+      data:{
+        accessToken : newAccessToken
+      }
+    })
   } catch (error) {
     return res.status(500).json({
       message: error.message || error,
