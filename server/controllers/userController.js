@@ -155,6 +155,9 @@ export const loginUserController = async (req, res) => {
       });
     }
 
+    const updateUser = await UserModel.findByIdAndUpdate(user?._id,{
+      last_login_date : new Date()
+    })
     const accessToken = await generateAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
 
@@ -231,6 +234,8 @@ export const uploadAvatar = async (req, res) => {
 
     return res.json({
       message: "upload profile",
+      success:true,
+      error:false,
       data: {
         _id: userId,
         avatar: upload.url,
@@ -362,6 +367,10 @@ export const verifyForgotPasswordOtp = async (req, res) => {
     }
     // if otp is not expired
     // otp === user.forgot_password_otp
+    const updateUSer = await UserModel.findByIdAndUpdate(user?._id,{
+      forgot_password_otp: '',
+      forgot_password_expiry:''
+    })
 
     return res.json({
       message: "Verify otp successfully",
@@ -432,7 +441,7 @@ export const resetPassword = async (req, res) => {
 export const refreshToken = async (req, res) => {
   try {
     const refreshToken =
-      req.cookies.refreshToken || req.header?.authorization?.split(" ")[1];
+      req.cookies.refreshToken || req.headers?.authorization?.split(" ")[1];
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -482,3 +491,28 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+
+
+/* Get login user details */
+
+export const userDetails = async(req,res)=>{
+  try {
+    const userId = req.userId
+
+    const user = await UserModel.findById(userId).select('-password -refresh_token')
+
+    return res.json({
+      message:"user Details",
+      data:user,
+      error:false,
+      success:true
+    })
+  } catch (error) {
+    
+    return res.status(500).json({
+      message:"something went wrong",
+      error : true
+    })
+  }
+}
